@@ -25,6 +25,9 @@ THE SOFTWARE.
 #include <string.h>
 #include <stdio.h>
 
+#include <unistd.h>
+#include <getopt.h>
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -34,8 +37,58 @@ THE SOFTWARE.
 // At most 512 bytes for DNS message over UDP as per RFC1035 4.2.1:
 #define MAX_DNS_MESSAGE 512
 
+static void help(void)
+{
+  const char* help_lines[] = {
+    "truncatednsd - Dummy UDP DNS server which always send truncated answers\n",
+    "\n",
+    "  -h | --help     Show some help\n"
+  };
+  int i;
+  for (i=0; i<sizeof(help_lines)/sizeof(char*); ++i)
+    fputs(help_lines[i], stderr);
+}
+
+static void parse_arguments(int argc, char** argv)
+{
+  static const struct option long_options[] = {
+    {"help", 0, NULL, 'h'},
+    {0,      0, 0,    0  }
+  };
+
+  while (1) {
+    int option_index;
+    int c = getopt_long(argc, argv, "h", long_options, &option_index);
+    if (c == -1)
+      break;
+    switch (c) {
+    case 0:
+      switch(option_index) {
+      default:
+        help();
+        exit(1);
+        break;
+      }
+      break;
+    case 'h':
+      help();
+      exit(0);
+      break;
+    default:
+      help();
+      exit(1);
+      break;
+    }
+  }
+  if (optind < argc) {
+    help();
+    exit(1);
+  }
+}
+
 int main(int argc, char** argv)
 {
+  parse_arguments(argc, argv);
 
   int sock = socket(AF_INET6, SOCK_DGRAM, 0);
   if (sock == -1) {
