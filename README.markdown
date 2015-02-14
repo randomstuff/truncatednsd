@@ -51,12 +51,23 @@ client should fall back to TCP.
 
   * setuid/setgid;
 
+  * chroot;
+
+  * pidfile;  
+
   * daemon mode;
 
   * inetd mode;
 
   * systemd mode;
 
+  * sanbox (seccomp-bpf);
+
   * bind to one inet address;
 
-  * bind to several inet addresses.
+  * bind to several inet addresses;
+
+  * option to reply with the IP address macthing the query
+    (IP_PKTINFO, IPV6_RECVPKTINFO/IPV6_PKTINFO; IP_RECVDSTADDR for BSD
+    and OS/X).
+ 
