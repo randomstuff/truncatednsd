@@ -21,6 +21,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#include "truncatednsd.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -30,6 +32,8 @@ THE SOFTWARE.
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <grp.h>
+
 #include <netinet/in.h>
 
 #define DNS_PORT 53
@@ -37,63 +41,34 @@ THE SOFTWARE.
 // At most 512 bytes for DNS message over UDP as per RFC1035 4.2.1:
 #define MAX_DNS_MESSAGE 512
 
-static void help(void)
+static void change_credentials()
 {
-  const char* help_lines[] = {
-    "truncatednsd - Dummy UDP DNS server which always send truncated answers\n",
-    "\n",
-    "  -h | --help     Show some help\n"
-  };
-  int i;
-  for (i=0; i<sizeof(help_lines)/sizeof(char*); ++i)
-    fputs(help_lines[i], stderr);
-}
-
-static void parse_arguments(int argc, char** argv)
-{
-  static const struct option long_options[] = {
-    {"help", 0, NULL, 'h'},
-    {0,      0, 0,    0  }
-  };
-
-  while (1) {
-    int option_index;
-    int c = getopt_long(argc, argv, "h", long_options, &option_index);
-    if (c == -1)
-      break;
-    switch (c) {
-    case 0:
-      switch(option_index) {
-      default:
-        help();
-        exit(1);
-        break;
-      }
-      break;
-    case 'h':
-      help();
-      exit(0);
-      break;
-    default:
-      help();
+  if (config.groups_len != 0) {
+    if (setgroups(config.groups_len, config.groups) == -1) {
+      perror("setgroups");
       exit(1);
-      break;
     }
   }
-  if (optind < argc) {
-    help();
-    exit(1);
+  if (config.options & TRUNCATEDNSD_SETGID) {
+    if (setgid(config.gid) == -1) {
+      perror("setgid");
+      exit(1);
+    }
+  }
+  if (config.options & TRUNCATEDNSD_SETUID) {
+    if (setuid(config.uid) == -1) {
+      perror("setuid");
+      exit(1);
+    }
   }
 }
 
-int main(int argc, char** argv)
+static int open_socket()
 {
-  parse_arguments(argc, argv);
-
   int sock = socket(AF_INET6, SOCK_DGRAM, 0);
   if (sock == -1) {
     perror("socket");
-    return 1;
+    exit(1);
   }
   struct sockaddr_in6 addr;
   memset(&addr, 0, sizeof(addr));
@@ -101,12 +76,22 @@ int main(int argc, char** argv)
   addr.sin6_port   = htons(DNS_PORT);
   if (bind(sock, (const struct sockaddr *) &addr, sizeof(addr)) == -1) {
     perror("bind");
-    return 1;
+    exit(1);
   }
+  return sock;
+}
+
+int main(int argc, char** argv)
+{
+  parse_arguments(argc, argv);
+
+  int sock = open_socket();
+  change_credentials();
 
   char buffer[MAX_DNS_MESSAGE];
 
   while(1) {
+    struct sockaddr_in6 addr;
     socklen_t socklen = sizeof(addr);
     ssize_t size = recvfrom(sock, buffer, sizeof(buffer), 0,
       (struct sockaddr *) &addr, &socklen);
