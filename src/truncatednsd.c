@@ -41,7 +41,7 @@ THE SOFTWARE.
 // At most 512 bytes for DNS message over UDP as per RFC1035 4.2.1:
 #define MAX_DNS_MESSAGE 512
 
-static void change_credentials()
+static void change_credentials(void)
 {
   if (config.groups_len != 0) {
     if (setgroups(config.groups_len, config.groups) == -1) {
@@ -63,7 +63,7 @@ static void change_credentials()
   }
 }
 
-static int open_socket()
+static int open_socket(void)
 {
   int sock = socket(AF_INET6, SOCK_DGRAM, 0);
   if (sock == -1) {
@@ -81,23 +81,18 @@ static int open_socket()
   return sock;
 }
 
-int main(int argc, char** argv)
+static void serve(int sockin, int sockout)
 {
-  parse_arguments(argc, argv);
-
-  int sock = open_socket();
-  change_credentials();
-
   char buffer[MAX_DNS_MESSAGE];
 
   while(1) {
     struct sockaddr_in6 addr;
     socklen_t socklen = sizeof(addr);
-    ssize_t size = recvfrom(sock, buffer, sizeof(buffer), 0,
+    ssize_t size = recvfrom(sockin, buffer, sizeof(buffer), 0,
       (struct sockaddr *) &addr, &socklen);
     if (size == -1) {
       perror("recvfrom");
-      return 1;
+      exit(1);
     }
     if (socklen != sizeof(addr)) {
       continue;
@@ -117,11 +112,37 @@ int main(int argc, char** argv)
     uint16_t ancount = htons(1);
     memcpy(buffer + 4, &ancount, sizeof(ancount));
 
-    if (sendto(sock, buffer, size, 0, (struct sockaddr *)
-        &addr, socklen) == -1) {
+    if (sendto(sockout, buffer, size, 0, (struct sockaddr *)
+      &addr, socklen) == -1) {
       continue;
     }
   }
+}
 
+void run_inetd(void)
+{
+  change_credentials();
+  serve(0, 1);
+}
+
+void run_standalone(void)
+{
+  int sock = open_socket();
+  change_credentials();
+  serve(sock, sock);
+}
+
+int main(int argc, char** argv)
+{
+  parse_arguments(argc, argv);
+  switch (config.mode) {
+  case TRUNCATEDNSD_MODE_DEFAULT:
+  case TRUNCATEDNSD_MODE_STANDALONE:
+    run_standalone();
+    break;
+  case TRUNCATEDNSD_MODE_INETD:
+    run_inetd();
+    break;
+  }
   return 0;
 }

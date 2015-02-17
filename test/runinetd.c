@@ -21,31 +21,46 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef TRUNCATEDNSD_H_
-#define TRUNCATEDNSD_H_
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include <stdint.h>
-
+#include <unistd.h>
 #include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 
-#define TRUNCATEDNSD_MODE_DEFAULT 0
-#define TRUNCATEDNSD_MODE_STANDALONE 1
-#define TRUNCATEDNSD_MODE_INETD 2
+int main(int argc, char** argv)
+{
+  if (argc < 2) {
+    fprintf(stderr, "Missing argument\n");
+    return 1;
+  }
 
-#define TRUNCATEDNSD_SETUID 1
-#define TRUNCATEDNSD_SETGID 2
+  int sock = socket(AF_INET6, SOCK_DGRAM, 0);
+  if (sock == -1) {
+    perror("socket");
+    exit(1);
+  }
+  struct sockaddr_in6 addr;
+  memset(&addr, 0, sizeof(addr));
+  addr.sin6_family = AF_INET6;
+  addr.sin6_port   = htons(9000);
+  if (bind(sock, (const struct sockaddr *) &addr, sizeof(addr)) == -1) {
+    perror("bind");
+    exit(1);
+  }
 
-struct truncatedns_config {
-  int mode;
-  int options;
-  uid_t uid;
-  gid_t gid;
-  gid_t* groups;
-  size_t groups_len;
-};
+  if (dup2(sock, 0) == -1 || dup2(sock, 1) == -1) {
+    perror("dup2");
+    exit(1);
+  }
+  if (close(sock) == -1) {
+    perror("close");
+    exit(1);
+  }
 
-extern struct truncatedns_config config;
-
-void parse_arguments(int argc, char** argv);
-
-#endif
+  execvp(argv[1], argv+1);
+  perror("execvp");
+  return 1;
+}

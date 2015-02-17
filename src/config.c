@@ -42,6 +42,8 @@ static void help(void)
     "\n",
     "  -h | --help     Show some help\n",
     "  --su foo        Change user\n",
+    "  --standalone    Standalone mode\n",
+    "  --inetd         Inetd mode\n",
   };
   int i;
   for (i=0; i < sizeof(help_lines)/sizeof(char*); ++i)
@@ -81,10 +83,22 @@ static void config_su(char* login)
   endgrent();
 }
 
+static void config_mode(int mode)
+{
+  if (config.mode && config.mode != mode) {
+    fprintf(stderr, "Inconsistent mode option\n");
+  }
+  config.mode = mode;
+}
+
 static void config_long_option(const char* option, const char* arg)
 {
   if (strcmp(option, "su") == 0) {
     config_su(optarg);
+  } else if (strcmp(option, "standalone") == 0) {
+    config_mode(TRUNCATEDNSD_MODE_STANDALONE);
+  } else if (strcmp(option, "inetd") == 0) {
+    config_mode(TRUNCATEDNSD_MODE_INETD);
   } else {
     help();
     exit(1);
@@ -96,6 +110,8 @@ void parse_arguments(int argc, char** argv)
   static const struct option long_options[] = {
     {"help",       0, NULL, 'h'},
     {"su",         1, NULL,  0},
+    {"standalone", 0, NULL,  0},
+    {"inetd",      0, NULL,  0},
     {0,            0, 0,     0}
   };
 
