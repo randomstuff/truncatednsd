@@ -44,6 +44,7 @@ static void help(void)
     "  --su foo        Change user\n",
     "  --standalone    Standalone mode\n",
     "  --inetd         Inetd mode\n",
+    "  --port 9000     Choose the UDP port\n",
   };
   int i;
   for (i=0; i < sizeof(help_lines)/sizeof(char*); ++i)
@@ -99,6 +100,8 @@ static void config_long_option(const char* option, const char* arg)
     config_mode(TRUNCATEDNSD_MODE_STANDALONE);
   } else if (strcmp(option, "inetd") == 0) {
     config_mode(TRUNCATEDNSD_MODE_INETD);
+  } else if (strcmp(option, "port") == 0) {
+    config.port = atoll(optarg);
   } else {
     help();
     exit(1);
@@ -112,8 +115,11 @@ void parse_arguments(int argc, char** argv)
     {"su",         1, NULL,  0},
     {"standalone", 0, NULL,  0},
     {"inetd",      0, NULL,  0},
+    {"port",       1, NULL,  0},
     {0,            0, 0,     0}
   };
+
+  config.port = 53;
 
   while (1) {
     int option_index;

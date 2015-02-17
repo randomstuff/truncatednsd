@@ -36,8 +36,6 @@ THE SOFTWARE.
 
 #include <netinet/in.h>
 
-#define DNS_PORT 53
-
 // At most 512 bytes for DNS message over UDP as per RFC1035 4.2.1:
 #define MAX_DNS_MESSAGE 512
 
@@ -73,7 +71,7 @@ static int open_socket(void)
   struct sockaddr_in6 addr;
   memset(&addr, 0, sizeof(addr));
   addr.sin6_family = AF_INET6;
-  addr.sin6_port   = htons(DNS_PORT);
+  addr.sin6_port   = htons(config.port);
   if (bind(sock, (const struct sockaddr *) &addr, sizeof(addr)) == -1) {
     perror("bind");
     exit(1);

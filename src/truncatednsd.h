@@ -38,6 +38,7 @@ THE SOFTWARE.
 struct truncatedns_config {
   int mode;
   int options;
+  uint16_t port;
   uid_t uid;
   gid_t gid;
   gid_t* groups;
