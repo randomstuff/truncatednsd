@@ -120,6 +120,7 @@ static void serve(int sockin, int sockout)
 void run_inetd(void)
 {
   change_credentials();
+  enable_sandbox();
   serve(0, 1);
 }
 
@@ -127,6 +128,7 @@ void run_standalone(void)
 {
   int sock = open_socket();
   change_credentials();
+  enable_sandbox();
   serve(sock, sock);
 }
 

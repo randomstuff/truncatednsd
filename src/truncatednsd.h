@@ -34,6 +34,7 @@ THE SOFTWARE.
 
 #define TRUNCATEDNSD_SETUID 1
 #define TRUNCATEDNSD_SETGID 2
+#define TRUNCATEDNSD_SANDBOX 4
 
 struct truncatedns_config {
   int mode;
@@ -48,5 +49,7 @@ struct truncatedns_config {
 extern struct truncatedns_config config;
 
 void parse_arguments(int argc, char** argv);
+
+void enable_sandbox(void);
 
 #endif

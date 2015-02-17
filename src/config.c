@@ -45,6 +45,7 @@ static void help(void)
     "  --standalone    Standalone mode\n",
     "  --inetd         Inetd mode\n",
     "  --port 9000     Choose the UDP port\n",
+    "  --sandbox       Enable sandbox\n",
   };
   int i;
   for (i=0; i < sizeof(help_lines)/sizeof(char*); ++i)
@@ -102,6 +103,8 @@ static void config_long_option(const char* option, const char* arg)
     config_mode(TRUNCATEDNSD_MODE_INETD);
   } else if (strcmp(option, "port") == 0) {
     config.port = atoll(optarg);
+  } else if (strcmp(option, "sandbox") == 0) {
+    config.options |= TRUNCATEDNSD_SANDBOX;
   } else {
     help();
     exit(1);
@@ -116,6 +119,7 @@ void parse_arguments(int argc, char** argv)
     {"standalone", 0, NULL,  0},
     {"inetd",      0, NULL,  0},
     {"port",       1, NULL,  0},
+    {"sandbox",    0, NULL,  0},
     {0,            0, 0,     0}
   };
 
