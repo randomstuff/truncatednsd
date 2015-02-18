@@ -30,10 +30,17 @@ THE SOFTWARE.
 #include <unistd.h>
 #include <getopt.h>
 #include <sys/types.h>
+#include <syslog.h>
 #include <pwd.h>
 #include <grp.h>
 
 struct truncatedns_config config;
+
+static void unknown_argument(void)
+{
+  log_message(LOG_ERR, "Unrecognised argument");
+  exit(1);
+}
 
 static void help(void)
 {
@@ -46,6 +53,9 @@ static void help(void)
     "  --inetd         Inetd mode\n",
     "  --port 9000     Choose the UDP port\n",
     "  --sandbox       Enable sandbox\n",
+    "  --log stderr    Log to stderr\n",
+    "  --log syslog    Log using syslog\n",
+    "  --loglevel 5    Choose log verbosity (using a syslog priotity)\n",
   };
   int i;
   for (i=0; i < sizeof(help_lines)/sizeof(char*); ++i)
@@ -56,7 +66,7 @@ static void config_su(char* login)
 {
   struct passwd* user = getpwnam(login);
   if (!user) {
-    fprintf(stderr, "Unknown user name: %s\n", login);
+    log_message(LOG_ERR, "Unknown user name: %s", login);
     exit(1);
   }
   config.options |= TRUNCATEDNSD_SETUID | TRUNCATEDNSD_SETGID;
@@ -88,9 +98,30 @@ static void config_su(char* login)
 static void config_mode(int mode)
 {
   if (config.mode && config.mode != mode) {
-    fprintf(stderr, "Inconsistent mode option\n");
+    log_message(LOG_ERR, "Inconsistent mode option");
+    exit(1);
   }
   config.mode = mode;
+}
+
+static void config_log(const char* log_mode)
+{
+  if (strcmp(log_mode, "stderr") == 0) {
+    config.log_mode = TRUNCATEDNSD_LOG_STDIO;
+    config.log_file = stderr;
+  } else if (strcmp(log_mode, "syslog") == 0) {
+    openlog(NULL, 0, LOG_DAEMON);
+    config.log_mode = TRUNCATEDNSD_LOG_SYSLOG;
+    config.log_file = NULL;
+  } else {
+    log_message(LOG_ERR, "Unknown log mode: %s", log_mode);
+    exit(1);
+  }
+}
+
+static void config_loglevel(const char* level)
+{
+  config.log_level = atoi(level);
 }
 
 static void config_long_option(const char* option, const char* arg)
@@ -108,14 +139,21 @@ static void config_long_option(const char* option, const char* arg)
   } else if (strcmp(option, "chroot") == 0) {
     free(config.chroot);
     config.chroot = strdup(optarg);
+  } else if (strcmp(option, "log") == 0) {
+    config_log(optarg);
+  } else if (strcmp(option, "loglevel") == 0) {
+    config_loglevel(optarg);
   } else {
-    help();
-    exit(1);
+    unknown_argument();
   }
 }
 
 void parse_arguments(int argc, char** argv)
 {
+  config.log_mode = TRUNCATEDNSD_LOG_STDIO;
+  config.log_file = stderr;
+  config.log_level = LOG_NOTICE;
+
   static const struct option long_options[] = {
     {"help",       0, NULL, 'h'},
     {"su",         1, NULL,  0},
@@ -124,6 +162,8 @@ void parse_arguments(int argc, char** argv)
     {"port",       1, NULL,  0},
     {"sandbox",    0, NULL,  0},
     {"chroot",     1, NULL,  0},
+    {"log",        1, NULL,  0},
+    {"loglevel",   1, NULL,  0},
     {0,            0, 0,     0}
   };
 
@@ -149,13 +189,11 @@ void parse_arguments(int argc, char** argv)
       break;
 
     default:
-      help();
-      exit(1);
+      unknown_argument();
       break;
     }
   }
   if (optind < argc) {
-    help();
-    exit(1);
+    unknown_argument();
   }
 }

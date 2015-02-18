@@ -25,6 +25,7 @@ THE SOFTWARE.
 #define TRUNCATEDNSD_H_
 
 #include <stdint.h>
+#include <stdio.h>
 
 #include <sys/types.h>
 
@@ -36,6 +37,9 @@ THE SOFTWARE.
 #define TRUNCATEDNSD_SETGID 2
 #define TRUNCATEDNSD_SANDBOX 4
 
+#define TRUNCATEDNSD_LOG_STDIO 0
+#define TRUNCATEDNSD_LOG_SYSLOG 1
+
 struct truncatedns_config {
   int mode;
   int options;
@@ -45,6 +49,11 @@ struct truncatedns_config {
   gid_t* groups;
   size_t groups_len;
   char* chroot;
+  int log_mode;
+  FILE* log_file;
+  char* log_buffer;
+  size_t log_buffer_size;
+  int log_level;
 };
 
 extern struct truncatedns_config config;
@@ -52,5 +61,7 @@ extern struct truncatedns_config config;
 void parse_arguments(int argc, char** argv);
 
 void enable_sandbox(void);
+
+void log_message(int priority, const char *format, ...);
 
 #endif

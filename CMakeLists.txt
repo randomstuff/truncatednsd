@@ -9,5 +9,8 @@ if(USE_SANDBOX)
   add_definitions(-DUSE_SANDBOX)
 endif()
 
-add_executable(truncatednsd src/truncatednsd.c src/config.c src/sandbox.c)
+add_executable(truncatednsd
+  src/truncatednsd.c src/config.c src/sandbox.c
+  src/log.c
+  )
 add_executable(runinetd test/runinetd.c)

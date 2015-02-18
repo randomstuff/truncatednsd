@@ -26,6 +26,7 @@ THE SOFTWARE.
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <syslog.h>
 
 #ifdef USE_SANDBOX
 
@@ -47,12 +48,10 @@ void enable_sandbox(void)
     return;
 #ifndef USE_SANDBOX
 
-  fprintf(stderr, "Sandbox support not enabled\n");
+  log_message(LOG_ERR, "Sandbox support not enabled");
   exit(1);
 
 #else
-
-  fprintf(stderr, "Enabling sandbox\n");
 
   struct sock_filter filters[] = {
     // Checking the architecture is useless as we don't allow exec and friends.
@@ -75,6 +74,8 @@ void enable_sandbox(void)
     perror("PR_SET_SECCOMP");
     exit(1);
   }
+
+  log_message(LOG_INFO, "Sandbox enabled");
 
 #endif
 }

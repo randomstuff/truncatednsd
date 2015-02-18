@@ -29,6 +29,7 @@ THE SOFTWARE.
 
 #include <unistd.h>
 #include <getopt.h>
+#include <syslog.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -42,30 +43,26 @@ THE SOFTWARE.
 static void change_credentials(void)
 {
   if (config.chroot) {
-    if (chdir(config.chroot) == -1) {
-      perror("chdir");
-      exit(1);
-    }
-    if (chroot(config.chroot) == -1) {
-      perror("chroot");
+    if (chdir(config.chroot) == -1 || chroot(config.chroot) == -1) {
+      log_message(LOG_ERR, "chroot failed");
       exit(1);
     }
   }
   if (config.groups_len != 0) {
     if (setgroups(config.groups_len, config.groups) == -1) {
-      perror("setgroups");
+      log_message(LOG_ERR, "setgroups failed");
       exit(1);
     }
   }
   if (config.options & TRUNCATEDNSD_SETGID) {
     if (setgid(config.gid) == -1) {
-      perror("setgid");
+      log_message(LOG_ERR, "setgid failed");
       exit(1);
     }
   }
   if (config.options & TRUNCATEDNSD_SETUID) {
     if (setuid(config.uid) == -1) {
-      perror("setuid");
+      log_message(LOG_ERR, "setuid failed");
       exit(1);
     }
   }
@@ -74,32 +71,33 @@ static void change_credentials(void)
 static int open_socket(void)
 {
   int sock = socket(AF_INET6, SOCK_DGRAM, 0);
-  if (sock == -1) {
-    perror("socket");
-    exit(1);
-  }
+  if (sock == -1)
+    goto err;
   struct sockaddr_in6 addr;
   memset(&addr, 0, sizeof(addr));
   addr.sin6_family = AF_INET6;
   addr.sin6_port   = htons(config.port);
-  if (bind(sock, (const struct sockaddr *) &addr, sizeof(addr)) == -1) {
-    perror("bind");
-    exit(1);
-  }
+  if (bind(sock, (const struct sockaddr *) &addr, sizeof(addr)) == -1)
+    goto err;
+  log_message(LOG_INFO, "Socket opened");
   return sock;
+err:
+  log_message(LOG_ERR, "Could not open socket");
+  exit(1);
 }
 
 static void serve(int sockin, int sockout)
 {
   char buffer[MAX_DNS_MESSAGE];
 
+  log_message(LOG_INFO, "Serving messages");
   while(1) {
     struct sockaddr_in6 addr;
     socklen_t socklen = sizeof(addr);
     ssize_t size = recvfrom(sockin, buffer, sizeof(buffer), 0,
       (struct sockaddr *) &addr, &socklen);
     if (size == -1) {
-      perror("recvfrom");
+      log_message(LOG_ERR, "Reception error");
       exit(1);
     }
     if (socklen != sizeof(addr)) {
