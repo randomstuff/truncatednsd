@@ -121,7 +121,7 @@ void run_inetd(void)
 {
   change_credentials();
   enable_sandbox();
-  serve(0, 1);
+  serve(STDIN_FILENO, STDOUT_FILENO);
 }
 
 void run_standalone(void)
