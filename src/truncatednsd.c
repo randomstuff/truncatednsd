@@ -42,6 +42,10 @@ THE SOFTWARE.
 static void change_credentials(void)
 {
   if (config.chroot) {
+    if (chdir(config.chroot) == -1) {
+      perror("chdir");
+      exit(1);
+    }
     if (chroot(config.chroot) == -1) {
       perror("chroot");
       exit(1);
