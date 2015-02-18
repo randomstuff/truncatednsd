@@ -41,6 +41,12 @@ THE SOFTWARE.
 
 static void change_credentials(void)
 {
+  if (config.chroot) {
+    if (chroot(config.chroot) == -1) {
+      perror("chroot");
+      exit(1);
+    }
+  }
   if (config.groups_len != 0) {
     if (setgroups(config.groups_len, config.groups) == -1) {
       perror("setgroups");

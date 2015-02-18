@@ -44,6 +44,7 @@ struct truncatedns_config {
   gid_t gid;
   gid_t* groups;
   size_t groups_len;
+  char* chroot;
 };
 
 extern struct truncatedns_config config;

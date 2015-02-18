@@ -105,6 +105,9 @@ static void config_long_option(const char* option, const char* arg)
     config.port = atoll(optarg);
   } else if (strcmp(option, "sandbox") == 0) {
     config.options |= TRUNCATEDNSD_SANDBOX;
+  } else if (strcmp(option, "chroot") == 0) {
+    free(config.chroot);
+    config.chroot = strdup(optarg);
   } else {
     help();
     exit(1);
@@ -120,6 +123,7 @@ void parse_arguments(int argc, char** argv)
     {"inetd",      0, NULL,  0},
     {"port",       1, NULL,  0},
     {"sandbox",    0, NULL,  0},
+    {"chroot",     1, NULL,  0},
     {0,            0, 0,     0}
   };
 
