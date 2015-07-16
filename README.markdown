@@ -1,9 +1,15 @@
 # TruncateDNSd
 
-A DNS server which replies to all DNS queries which the truncate bit (TC=1).
-When seeing this, a DNS client should fall back to TCP mode. This might be used
-when the local DNS server is only handling TCP (for example because it is
-implemented as a `stunnel`).
+A proof-of-concept DNS server which replies to all DNS queries which the
+truncate bit (TC=1). When seeing this, a DNS client should fall back to TCP
+mode. This might be used when the local DNS server is only handling TCP
+(for example because it is implemented as a `stunnel`). See
+[Recursive DNS over TLS over TCP 443](http://www.gabriel.urdhr.fr/2015/02/14/recursive-dns-over-tls-over-tcp-443/)
+for more informations about the motivation.
+
+This is a hack. Do not use this.
+
+See [dnsfwd](https://github.com/randomstuff/dnsfwd) for a cleaner solution.
 
 ## Context
 
@@ -44,30 +50,3 @@ available; because the program is not using the system-wide resolver such as
 `dig`, `lwresd`; because the program overrides the system resolver
 configuration), truncatednsd can be used: when receiving a TC=1 reply the DNS
 client should fall back to TCP.
-
-## ROADMAP
-
-  * argument parsing;
-
-  * setuid/setgid;
-
-  * chroot;
-
-  * pidfile;  
-
-  * daemon mode;
-
-  * inetd mode;
-
-  * systemd mode;
-
-  * sanbox (seccomp-bpf);
-
-  * bind to one inet address;
-
-  * bind to several inet addresses;
-
-  * option to reply with the IP address macthing the query
-    (IP_PKTINFO, IPV6_RECVPKTINFO/IPV6_PKTINFO; IP_RECVDSTADDR for BSD
-    and OS/X).
- 
