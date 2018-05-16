@@ -9,7 +9,8 @@ for more informations about the motivation.
 
 This is a hack. Do not use this.
 
-See [dnsfwd](https://github.com/randomstuff/dnsfwd) for a cleaner solution.
+See [DNS Privacy](https://dnsprivacy.org/)
+for correct [solutions](https://dnsprivacy.org/wiki/display/DP/DNS+Privacy+Clients).
 
 ## Context
 
